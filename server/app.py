@@ -11,15 +11,19 @@ class Signup(Resource):
     def post(self):
         try:
             json=request.get_json()
+
+            # Create a new User instance            
             user=User(
                 username=json['username'],
                 image_url=json.get('image_url'),
                 bio=json.get('bio')
             )
+
+            # Hash the user's password and assign it to the user instance
             user.password_hash=json['password']
             db.session.add(user)
             db.session.commit()
-            session['user_id']=user.id
+            session['user_id']=user.id  # Store user ID in the session
             return user.to_dict(only=('id', 'username', 'image_url', 'bio',)), 201
         except Exception as e:
             return {'error': f'{e}'}, 422
@@ -44,8 +48,9 @@ class Login(Resource):
             
             user = User.query.filter_by(username=username).first()
             
+            # Verify user credentials            
             if user and user.authenticate(password):
-                session['user_id'] = user.id
+                session['user_id'] = user.id # Store user ID in session
                 
                 return {
                     'id': user.id,
@@ -63,7 +68,7 @@ class Login(Resource):
 class Logout(Resource):
     def delete(self):
         if session['user_id']:
-            session['user_id']=None
+            session['user_id']=None # Clear the session
             return '', 204
         else:
             return {'error': 'Unauthorized: No active session'}, 401
@@ -78,7 +83,10 @@ class RecipeIndex(Resource):
         user_recipes=Recipe.query.filter_by(user_id=user_id).all()
 
         recipes_data=[recipe.to_dict(rules=('-user.recipes',)) for recipe in user_recipes]
+
+        # Return the user's recipes as JSON
         return jsonify(recipes_data), 200
+        
         # return jsonify([recipe.to_dict(rules=('-user.recipes',)) for recipe in user_recipes]), 200
 
     def post(self):
